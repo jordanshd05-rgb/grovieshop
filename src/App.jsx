@@ -878,7 +878,7 @@ export default function App() {
               </div>
               <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-lg border border-stone-200">
                 <img
-    src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80"
+    src="images/Banyak.jpeg"
     alt="Wanita nelayan mengolah produk pesisir"
     className="w-full h-full object-cover"
     referrerPolicy="no-referrer"
