@@ -36,7 +36,7 @@ export const ASSET_CONFIG = {
   logo: {
     useRealLogo: true,
     // Ubah ke true jika ingin memakai file gambar asli
-    imagePath: "images/logo.jpeg"
+    imagePath: "images/logo.png"
     // Ganti dengan path logo Anda nanti
   },
   heroBanner: "images/Utama.jpeg",
@@ -230,30 +230,43 @@ export default function App() {
       triggerToast("Pembayaran Berhasil! Terima kasih atas kontribusi ekologi Anda.", "success");
     }, 2e3);
   };
+// Render App Logo (Modifikasi agar teks tidak hilang saat pakai gambar asli)
   const renderLogo = () => {
-    if (ASSET_CONFIG.logo.useRealLogo) {
-      return <img
-        src={ASSET_CONFIG.logo.imagePath}
-        alt="GrovieShop Logo"
-        className="h-10 w-auto object-contain"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-          const fallback = document.getElementById("logo-fallback");
-          if (fallback) fallback.style.display = "flex";
-        }}
-      />;
-    }
-    return <div id="logo-fallback" className="flex items-center space-x-3">
-        <div className="w-9 h-9 bg-accent-ochre rounded-xl flex items-center justify-center text-white shrink-0 shadow-md">
+    return (
+      <div className="flex items-center space-x-3">
+        {ASSET_CONFIG.logo.useRealLogo ? (
+          /* Jika useRealLogo true, kotak oranye ikon daun diganti dengan file gambar asli */
+          <img 
+            src={ASSET_CONFIG.logo.imagePath} 
+            alt="GrovieShop Logo Asset" 
+            className="w-9 h-9 object-contain rounded-xl shadow-md shrink-0"
+            onError={(e) => {
+              // Jika gambar gagal dimuat, otomatis pasang fallback ikon daun
+              e.currentTarget.style.display = 'none';
+              const fallbackIcon = document.getElementById('fallback-icon');
+              if (fallbackIcon) fallbackIcon.style.display = 'flex';
+            }}
+          />
+        ) : null}
+
+        {/* Kotak ikon daun bawaan (hanya muncul jika useRealLogo false, atau sebagai cadangan) */}
+        <div 
+          id="fallback-icon" 
+          className="w-9 h-9 bg-accent-ochre rounded-xl flex items-center justify-center text-white shrink-0 shadow-md"
+          style={{ display: ASSET_CONFIG.logo.useRealLogo ? 'none' : 'flex' }}
+        >
           <Leaf className="w-5 h-5 text-white animate-pulse" />
         </div>
+
+        {/* Teks Logo - Tidak akan hilang karena ditaruh di luar kondisi gambar */}
         <div className="text-left">
           <span className="block font-serif font-bold text-lg leading-none text-white tracking-wide">
             Grovie<span className="text-accent-ochre font-sans font-semibold">Shop</span>
           </span>
           <span className="text-[9px] font-mono text-stone-300 font-semibold tracking-wider block uppercase">Langsa Mangrove Co.</span>
         </div>
-      </div>;
+      </div>
+    );
   };
   return <div className="min-h-screen bg-warm-bg text-stone-850 font-sans selection:bg-accent-ochre selection:text-white relative">
       
@@ -1493,20 +1506,14 @@ export default function App() {
       </AnimatePresence>
 
       {
-    /* 8. FOOTER */
-  }
+ /* 8. FOOTER */
       <footer className="bg-stone-900 text-stone-300 py-12 border-t border-stone-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           
           <div className="space-y-4 md:col-span-2 text-left">
-            <div className="flex items-center space-x-2">
-              <div className="bg-accent-ochre text-white p-1.5 rounded-lg">
-                <Leaf className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-serif font-bold text-xl tracking-wide text-white">
-                Grovie<span className="text-accent-ochre font-sans font-semibold">Shop</span>
-              </span>
-            </div>
+            {/* LOGO OTOMATIS: Memanggil fungsi logo utama agar ikut berganti ke logo.png */}
+            {renderLogo()}
+
             <p className="text-xs text-stone-400 leading-relaxed max-w-sm">
               Inovasi e-commerce kearifan lokal Agro-Marina. Dikembangkan secara khusus untuk mendukung pertumbuhan ekonomi lestari, perlindungan pantai dari abrasi, dan pemasaran produk olahan makanan-minuman tanaman mangrove khas pesisir Kota Langsa, Aceh.
             </p>
@@ -1557,7 +1564,7 @@ export default function App() {
         </div>
       </footer>
 
-      {
+      
     /* 9. GLOBAL INTERACTIVE TOAST NOTIFICATIONS */
   }
       <AnimatePresence>
