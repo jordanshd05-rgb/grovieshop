@@ -1,0 +1,6 @@
+{
+  "name": "GrovieShop",
+  "description": "Prototype Front-End E-Commerce GrovieShop - Mangrove Food & Beverage from Langsa, Aceh",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
