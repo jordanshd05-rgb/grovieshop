@@ -34,9 +34,9 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 export const ASSET_CONFIG = {
   logo: {
-    useRealLogo: false,
+    useRealLogo: true,
     // Ubah ke true jika ingin memakai file gambar asli
-    imagePath: "https://via.placeholder.com/150"
+    imagePath: "images/logo.jpeg"
     // Ganti dengan path logo Anda nanti
   },
   heroBanner: "images/Utama.jpeg",
