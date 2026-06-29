@@ -238,7 +238,7 @@ export default function App() {
           /* Jika useRealLogo true, kotak oranye ikon daun diganti dengan file gambar asli */
           <img 
             src={ASSET_CONFIG.logo.imagePath} 
-            alt="GrovieShop Logo Asset" 
+            alt="Mangrovise Logo Asset" 
             className="w-9 h-9 object-contain rounded-xl shadow-md shrink-0"
             onError={(e) => {
               // Jika gambar gagal dimuat, otomatis pasang fallback ikon daun
@@ -261,7 +261,7 @@ export default function App() {
         {/* Teks Logo - Tidak akan hilang karena ditaruh di luar kondisi gambar */}
         <div className="text-left">
           <span className="block font-serif font-bold text-lg leading-none text-white tracking-wide">
-            Grovie<span className="text-accent-ochre font-sans font-semibold">Shop</span>
+            Mangro<span className="text-accent-ochre font-sans font-semibold">Vise</span>
           </span>
           <span className="text-[9px] font-mono text-stone-300 font-semibold tracking-wider block uppercase">Langsa Mangrove Co.</span>
         </div>
@@ -422,7 +422,7 @@ export default function App() {
             </h1>
             
             <p className="text-stone-300 text-sm sm:text-base leading-relaxed max-w-xl">
-              GrovieShop menghadirkan produk pangan premium berbahan dasar buah mangrove pilihan dari hutan konservasi Kota Langsa, Aceh. Setiap gigitan dan tegukan Anda mengalirkan dukungan finansial langsung bagi ibu nelayan pesisir serta penanaman bibit mangrove baru.
+              Mangrovise menghadirkan produk pangan premium berbahan dasar buah mangrove pilihan dari hutan konservasi Kota Langsa, Aceh. Setiap gigitan dan tegukan Anda mengalirkan dukungan finansial langsung bagi ibu nelayan pesisir serta penanaman bibit mangrove baru.
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
@@ -475,7 +475,7 @@ export default function App() {
               <div className="relative bg-stone-900 rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/10 aspect-[4/5]">
                 <img
     src={ASSET_CONFIG.heroBanner}
-    alt="GrovieShop Premium Organic Products Showcase"
+    alt="Mangrovise Premium Organic Products Showcase"
     className="w-full h-full object-cover brightness-95 hover:scale-105 transition-transform duration-700"
     referrerPolicy="no-referrer"
   />
@@ -525,7 +525,7 @@ export default function App() {
       </div>
 
       {
-    /* 4. "3 ALASAN MEMILIH GROVIESHOP" MACRO FEATURES ROW */
+    /* 4. "3 ALASAN MEMILIH Mangrovise" MACRO FEATURES ROW */
   }
       <section className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center -mt-8 relative z-20">
         <div className="bg-white rounded-[2.5rem] p-8 sm:p-12 shadow-xl border border-stone-200/50 space-y-12">
@@ -534,7 +534,7 @@ export default function App() {
               <CheckCircle2 className="w-4 h-4 text-accent-ochre" /> Nilai Tambah Ekologis & Sosial
             </span>
             <h2 className="text-3xl font-serif font-bold text-stone-950 tracking-tight">
-              3 Pilar Keberlanjutan GrovieShop
+              3 Pilar Keberlanjutan Mangrovise
             </h2>
             <p className="text-sm text-stone-500">
               Setiap rupiah yang Anda belanjakan dirancang untuk memberikan dampak positif berkelanjutan bagi lingkungan pesisir dan masyarakat sekitar.
@@ -864,7 +864,7 @@ export default function App() {
                 Misi Konservasi Pesisir Langsa Melalui Produk Kreatif Agro-Marina
               </h2>
               <p className="text-sm text-stone-600 leading-relaxed">
-                GrovieShop didirikan di Kota Langsa, Provinsi Aceh, sebagai wadah inovasi sosial untuk menyelamatkan ekosistem pesisir dari ancaman abrasi parah. Kawasan muara dan pesisir Langsa menyimpan potensi luar biasa berupa hutan mangrove yang melimpah. Melalui hilirisasi produk pangan bernilai tambah tinggi, kami berupaya menghentikan penebangan pohon bakau liar dengan memberikan alternatif penghasilan baru yang jauh lebih menjanjikan bagi warga lokal.
+                Mangrovise didirikan di Kota Langsa, Provinsi Aceh, sebagai wadah inovasi sosial untuk menyelamatkan ekosistem pesisir dari ancaman abrasi parah. Kawasan muara dan pesisir Langsa menyimpan potensi luar biasa berupa hutan mangrove yang melimpah. Melalui hilirisasi produk pangan bernilai tambah tinggi, kami berupaya menghentikan penebangan pohon bakau liar dengan memberikan alternatif penghasilan baru yang jauh lebih menjanjikan bagi warga lokal.
               </p>
             </div>
 
@@ -872,7 +872,7 @@ export default function App() {
               <div className="space-y-4">
                 <h3 className="font-serif font-bold text-2xl text-stone-900">Menghubungkan Konsumen dengan Alam</h3>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  Banyak orang ingin membantu melestarikan alam namun tidak tahu caranya. Di GrovieShop, kami menyederhanakan proses donasi lingkungan melalui model belanja sehari-hari. Setiap produk yang dibeli menjadi simbol kontribusi nyata:
+                  Banyak orang ingin membantu melestarikan alam namun tidak tahu caranya. Di Mangrovise, kami menyederhanakan proses donasi lingkungan melalui model belanja sehari-hari. Setiap produk yang dibeli menjadi simbol kontribusi nyata:
                 </p>
                 <ul className="space-y-3 text-xs text-stone-700">
                   <li className="flex items-start space-x-2">
@@ -928,7 +928,7 @@ export default function App() {
                 Eco-Impact Interactive Calculator
               </h2>
               <p className="text-sm text-stone-500">
-                Gunakan slider di bawah untuk mensimulasikan jumlah pembelian produk GrovieShop Anda dan lihat seberapa besar dampak ekologi yang dapat kita hasilkan secara nyata!
+                Gunakan slider di bawah untuk mensimulasikan jumlah pembelian produk Mangrovise Anda dan lihat seberapa besar dampak ekologi yang dapat kita hasilkan secara nyata!
               </p>
             </div>
 
@@ -1404,7 +1404,7 @@ export default function App() {
   }
                     <div className="flex justify-between items-start pb-3 border-b border-dashed border-stone-300">
                       <div>
-                        <span className="font-bold text-stone-900 block">GROVIESHOP ACEH</span>
+                        <span className="font-bold text-stone-900 block">Mangrovise ACEH</span>
                         <span className="text-[9px] text-stone-400 block">Kota Langsa, Prov. Aceh, Indonesia</span>
                       </div>
                       <div className="text-right">
@@ -1470,7 +1470,7 @@ export default function App() {
                         SERTIFIKASI DONASI MANDIRI:
                       </span>
                       <p className="leading-relaxed text-stone-200">
-                        Atas nama pembeli, GrovieShop berkomitmen mengalokasikan pendanaan untuk penanaman sebanyak <strong className="text-white text-xs">{activeReceipt.ecoDonation} bibit bakau</strong> di muara pesisir Kuala Langsa. Estetika penyerapan emisi setara <strong className="text-white text-xs">{activeReceipt.carbonSaved} kg CO₂ / tahun</strong>.
+                        Atas nama pembeli, Mangrovise berkomitmen mengalokasikan pendanaan untuk penanaman sebanyak <strong className="text-white text-xs">{activeReceipt.ecoDonation} bibit bakau</strong> di muara pesisir Kuala Langsa. Estetika penyerapan emisi setara <strong className="text-white text-xs">{activeReceipt.carbonSaved} kg CO₂ / tahun</strong>.
                       </p>
                     </div>
 
@@ -1518,7 +1518,7 @@ export default function App() {
               Inovasi e-commerce kearifan lokal Agro-Marina. Dikembangkan secara khusus untuk mendukung pertumbuhan ekonomi lestari, perlindungan pantai dari abrasi, dan pemasaran produk olahan makanan-minuman tanaman mangrove khas pesisir Kota Langsa, Aceh.
             </p>
             <p className="text-xs text-stone-500">
-              © {(/* @__PURE__ */ new Date()).getFullYear()} GrovieShop Langsa, Aceh. Hak Cipta Dilindungi Undang-Undang.
+              © {(/* @__PURE__ */ new Date()).getFullYear()} Mangrovise Langsa, Aceh. Hak Cipta Dilindungi Undang-Undang.
             </p>
           </div>
 
