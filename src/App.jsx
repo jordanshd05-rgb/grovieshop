@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { useState, useEffect, useMemo, useRef } from "react";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { ref, set, push, onValue } from "firebase/database";
+import { auth, db } from "./firebase";
 import {
   ShoppingBag,
   ShoppingCart,
@@ -96,6 +99,92 @@ export const ASSET_CONFIG = {
 };
 export default function App() {
   const [currentTab, setCurrentTab] = useState("katalog");
+  const [user, setUser] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [orders, setOrders] = useState([]);
+
+  const generateOrderId = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "MNG-";
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setOrders([]);
+      return;
+    }
+    const ordersRef = ref(db, `orders/${user.uid}`);
+    const unsubscribe = onValue(ordersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const loadedOrders = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          ...value
+        })).reverse();
+        setOrders(loadedOrders);
+      } else {
+        setOrders([]);
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthError("");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      triggerToast("Berhasil masuk! Selamat datang kembali.");
+      setShowLoginModal(false);
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      setAuthError(error.message || "Gagal masuk. Silakan periksa kembali email dan password Anda.");
+      triggerToast("Gagal masuk. Periksa email/password.", "error");
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setAuthError("");
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      triggerToast("Pendaftaran berhasil! Selamat datang di Mangrovise.");
+      setShowLoginModal(false);
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      setAuthError(error.message || "Gagal mendaftar. Gunakan email lain atau pastikan password min. 6 karakter.");
+      triggerToast("Gagal mendaftar.", "error");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      triggerToast("Berhasil keluar.");
+      if (currentTab === "pesanan") {
+        setCurrentTab("katalog");
+      }
+    } catch (error) {
+      triggerToast("Gagal keluar.", "error");
+    }
+  };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mainContentRef = useRef(null);
   const handleTabChange = (tab) => {
@@ -205,32 +294,68 @@ export default function App() {
       triggerToast("Keranjang belanja Anda masih kosong!", "info");
       return;
     }
+    if (!user) {
+      triggerToast("Silakan masuk terlebih dahulu untuk melanjutkan checkout.", "info");
+      setIsCartOpen(false);
+      setShowLoginModal(true);
+      return;
+    }
     setCountdown(600);
     setCheckoutStatus("pending");
     setIsCheckoutModalOpen(true);
     setIsCartOpen(false);
   };
   const handleVerifyPayment = () => {
+    if (!user) {
+      triggerToast("Sesi Anda habis. Silakan masuk kembali.", "error");
+      return;
+    }
     setCheckoutStatus("verifying");
+    const orderId = generateOrderId();
+    const invoiceNo = "INV/" + new Date().getFullYear() + "/MNG/" + Math.floor(1e5 + Math.random() * 9e5);
+    const dateStr = new Date().toLocaleString("id-ID", { hour12: false });
+    const itemsData = cart.map(item => ({
+      productId: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      image: item.product.image
+    }));
+    const orderData = {
+      orderId: orderId,
+      invoiceNo: invoiceNo,
+      items: itemsData,
+      total: cartTotal,
+      tanggal: dateStr,
+      status: "In Process",
+      ecoDonation: ecoMetrics.seedlings,
+      carbonSaved: ecoMetrics.carbonOffset
+    };
     setTimeout(() => {
-      const randomId = "TX-" + Math.floor(1e4 + Math.random() * 9e4) + "-GRV";
-      const invoiceNo = "INV/" + (/* @__PURE__ */ new Date()).getFullYear() + "/GRV/" + Math.floor(1e5 + Math.random() * 9e5);
-      const receipt = {
-        invoiceNo,
-        transactionId: randomId,
-        date: (/* @__PURE__ */ new Date()).toLocaleString("id-ID", { hour12: false }),
-        items: [...cart],
-        subtotal: cartTotal,
-        ecoDonation: ecoMetrics.seedlings,
-        carbonSaved: ecoMetrics.carbonOffset
-      };
-      setActiveReceipt(receipt);
-      setCheckoutStatus("success");
-      setCart([]);
-      triggerToast("Pembayaran Berhasil! Terima kasih atas kontribusi ekologi Anda.", "success");
-    }, 2e3);
+      const userOrdersRef = ref(db, `orders/${user.uid}`);
+      push(userOrdersRef, orderData)
+        .then(() => {
+          const receipt = {
+            invoiceNo,
+            transactionId: orderId,
+            date: dateStr,
+            items: [...cart],
+            subtotal: cartTotal,
+            ecoDonation: ecoMetrics.seedlings,
+            carbonSaved: ecoMetrics.carbonOffset
+          };
+          setActiveReceipt(receipt);
+          setCheckoutStatus("success");
+          setCart([]);
+          triggerToast("Pembayaran Berhasil! Pesanan Anda telah tersimpan.", "success");
+        })
+        .catch((err) => {
+          console.error("Firebase database error:", err);
+          triggerToast("Gagal menyimpan pesanan ke database.", "error");
+          setCheckoutStatus("pending");
+        });
+    }, 2000);
   };
-// Render App Logo (Modifikasi agar teks tidak hilang saat pakai gambar asli)
   const renderLogo = () => {
     return (
       <div className="flex items-center space-x-3">
@@ -328,6 +453,17 @@ export default function App() {
               <span>Kalkulator Dampak</span>
               {currentTab === "impact" && <motion.div layoutId="navIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-ochre rounded-full" />}
             </button>
+
+            {user && (
+              <button
+                onClick={() => handleTabChange("pesanan")}
+                className={`hover:text-accent-ochre transition-colors relative py-1 flex items-center gap-1.5 ${currentTab === "pesanan" ? "text-accent-ochre font-bold" : "text-stone-200"}`}
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Pesanan Saya</span>
+                {currentTab === "pesanan" && <motion.div layoutId="navIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-ochre rounded-full" />}
+              </button>
+            )}
           </nav>
 
           <div className="flex items-center space-x-3">
@@ -345,6 +481,28 @@ export default function App() {
                   {totalCartItems}
                 </span>}
             </button>
+
+            {user ? (
+              <div className="hidden md:flex items-center space-x-3 text-left">
+                <div className="text-right leading-none">
+                  <span className="block text-[9px] text-stone-300 font-medium">Akun Pembeli</span>
+                  <span className="text-xs font-bold text-white max-w-[120px] truncate block mt-0.5">{user.email}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-950/40 hover:bg-red-900/50 text-red-200 border border-red-800/30 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Keluar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="hidden md:block bg-accent-ochre hover:bg-accent-ochre/90 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
+              >
+                Masuk
+              </button>
+            )}
 
             {
     /* Mobile Menu Toggle Button */
@@ -403,6 +561,47 @@ export default function App() {
                   <TrendingUp className="w-4 h-4" />
                   <span>Kalkulator Dampak</span>
                 </button>
+
+                {user && (
+                  <button
+                    onClick={() => {
+                      handleTabChange("pesanan");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left py-2.5 px-4 rounded-xl flex items-center space-x-3 text-xs font-bold transition-all ${currentTab === "pesanan" ? "bg-accent-ochre text-white shadow-md" : "text-stone-200 hover:bg-white/5"}`}
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Pesanan Saya</span>
+                  </button>
+                )}
+
+                {user ? (
+                  <div className="pt-3 border-t border-white/10 mt-3 space-y-3">
+                    <div className="px-4 py-2 bg-white/5 rounded-xl text-left">
+                      <span className="block text-[9px] text-stone-400 font-mono uppercase tracking-widest">Login Sebagai:</span>
+                      <span className="text-xs font-bold text-white block truncate">{user.email}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-center py-2.5 px-4 rounded-xl text-xs font-bold bg-red-950/40 hover:bg-red-900/50 text-red-200 border border-red-800/30 transition-all cursor-pointer"
+                    >
+                      Keluar Akun
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowLoginModal(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-center py-2.5 px-4 rounded-xl text-xs font-bold bg-accent-ochre text-white shadow-md transition-all mt-3 cursor-pointer"
+                  >
+                    Masuk Akun
+                  </button>
+                )}
               </div>
             </motion.div>}
         </AnimatePresence>
@@ -525,7 +724,7 @@ export default function App() {
       </div>
 
       {
-    /* 4. "3 ALASAN MEMILIH Mangrovise" MACRO FEATURES ROW */
+    /* 4. "3 ALASAN MEMILIH GROVIESHOP" MACRO FEATURES ROW */
   }
       <section className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center -mt-8 relative z-20">
         <div className="bg-white rounded-[2.5rem] p-8 sm:p-12 shadow-xl border border-stone-200/50 space-y-12">
@@ -1040,6 +1239,117 @@ export default function App() {
             </div>
           </div>}
 
+        {currentTab === "pesanan" && (
+          <div className="bg-white rounded-[2.5rem] p-8 sm:p-12 shadow-sm border border-stone-200/80 space-y-8 text-left">
+            <div className="max-w-2xl space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-accent-ochre flex items-center gap-1">
+                <ShoppingBag className="w-4 h-4 text-accent-ochre" /> Riwayat Belanja Lestari Anda
+              </span>
+              <h2 className="text-3xl font-serif font-bold text-stone-950 tracking-tight">
+                Pesanan Saya
+              </h2>
+              <p className="text-sm text-stone-500">
+                Lacak status pesanan pangan mangrove dan kontribusi bibit bakau Anda secara real-time.
+              </p>
+            </div>
+
+            {orders.length === 0 ? (
+              <div className="py-16 text-center border-2 border-dashed border-stone-200 rounded-3xl space-y-4">
+                <div className="w-16 h-16 bg-warm-bg rounded-2xl flex items-center justify-center mx-auto text-stone-400">
+                  <ShoppingBag className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-serif font-bold text-base text-stone-800">Belum Ada Transaksi</h4>
+                  <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                    Anda belum melakukan pemesanan produk Mangrovise. Silakan pilih produk dari katalog kami untuk memulai kontribusi hijau Anda!
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleTabChange("katalog")}
+                  className="bg-accent-ochre hover:opacity-95 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all cursor-pointer"
+                >
+                  Mulai Belanja Sekarang
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {orders.map((order) => (
+                  <div 
+                    key={order.id} 
+                    className="border border-stone-200/80 rounded-3xl overflow-hidden hover:shadow-md transition-all bg-white"
+                  >
+                    {/* Order Card Header */}
+                    <div className="bg-stone-50 p-6 border-b border-stone-150 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-stone-500">No. Invoice:</span>
+                          <span className="text-xs font-mono font-bold text-stone-900">{order.invoiceNo || `INV-${order.orderId}`}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{order.tanggal}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-stone-500">Status:</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-sm animate-pulse">
+                          {order.status || "In Process"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Order Card Body */}
+                    <div className="p-6 space-y-4">
+                      <div className="divide-y divide-stone-100">
+                        {order.items && order.items.map((item, index) => (
+                          <div key={index} className="py-3 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
+                            <div className="flex items-center gap-4">
+                              <img 
+                                src={item.image || "https://via.placeholder.com/150"} 
+                                alt={item.name} 
+                                className="w-12 h-12 object-cover rounded-xl border border-stone-100 shrink-0" 
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="text-left">
+                                <h4 className="text-xs font-bold text-stone-900">{item.name}</h4>
+                                <p className="text-[11px] text-stone-500 font-mono mt-0.5">
+                                  Rp {item.price.toLocaleString("id-ID")} x {item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-mono font-bold text-stone-900 shrink-0">
+                              Rp {(item.price * item.quantity).toLocaleString("id-ID")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Eco Impact Contribution Info */}
+                      <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2 text-emerald-800 font-medium">
+                          <Leaf className="w-4 h-4 text-accent-ochre animate-bounce shrink-0" />
+                          <span>Kontribusi Anda: <strong>{order.ecoDonation || Math.round(order.total / 10000)} Bibit Bakau</strong> ditanam di Kuala Langsa</span>
+                        </div>
+                        <div className="text-emerald-700 font-semibold font-mono">
+                          Setara -{order.carbonSaved || Math.round(order.total / 10000) * 2} kg CO₂ / tahun
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Card Footer */}
+                    <div className="bg-stone-50/60 p-6 border-t border-stone-150 flex justify-between items-center">
+                      <span className="text-xs font-bold text-stone-500">Total Pembayaran:</span>
+                      <span className="text-base font-mono font-bold text-mangrove-deep">
+                        Rp {order.total.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
 
       {
@@ -1404,7 +1714,7 @@ export default function App() {
   }
                     <div className="flex justify-between items-start pb-3 border-b border-dashed border-stone-300">
                       <div>
-                        <span className="font-bold text-stone-900 block">Mangrovise ACEH</span>
+                        <span className="font-bold text-stone-900 block">GROVIESHOP ACEH</span>
                         <span className="text-[9px] text-stone-400 block">Kota Langsa, Prov. Aceh, Indonesia</span>
                       </div>
                       <div className="text-right">
@@ -1506,7 +1816,8 @@ export default function App() {
       </AnimatePresence>
 
       {
- /* 8. FOOTER */
+    /* 8. FOOTER */
+  }
       <footer className="bg-stone-900 text-stone-300 py-12 border-t border-stone-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           
@@ -1564,7 +1875,116 @@ export default function App() {
         </div>
       </footer>
 
-      
+      {/* 9. MODAL LOGIN & REGISTRASI PEMBELI */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+            {/* Backdrop with blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLoginModal(false)}
+              className="absolute inset-0 bg-stone-950/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              className="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-stone-200 overflow-hidden z-10"
+            >
+              {/* Pattern Header */}
+              <div className="bg-mangrove-deep p-8 text-white relative overflow-hidden text-left">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-accent-ochre/10 rounded-bl-full pointer-events-none" />
+                <div className="relative z-10 space-y-2">
+                  <div className="flex items-center space-x-2 text-accent-ochre">
+                    <Leaf className="w-5 h-5 animate-bounce" />
+                    <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-accent-ochre">E-Commerce Lestari</span>
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold tracking-tight">
+                    {isRegistering ? "Gabung Mangrovise" : "Selamat Datang"}
+                  </h3>
+                  <p className="text-xs text-stone-300 leading-relaxed">
+                    {isRegistering 
+                      ? "Daftar akun pembeli untuk melacak pesanan dan donasi bibit bakau secara real-time."
+                      : "Masuk untuk melanjutkan transaksi dan meninjau sertifikat kontribusi ekologi Anda."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Form Content */}
+              <form onSubmit={isRegistering ? handleRegister : handleLogin} className="p-8 space-y-5 text-left">
+                {authError && (
+                  <div className="bg-red-50 text-red-800 text-xs p-4 rounded-2xl border border-red-200 font-medium">
+                    {authError}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="nama@email.com"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Kata Sandi</label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 karakter"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-mangrove-deep hover:bg-mangrove-deep/90 text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer mt-2"
+                >
+                  <span>{isRegistering ? "Mulai Konservasi & Daftar" : "Masuk ke Akun"}</span>
+                </button>
+
+                {/* Switcher Option */}
+                <div className="text-center pt-2">
+                  <p className="text-xs text-stone-500">
+                    {isRegistering ? "Sudah memiliki akun?" : "Belum bergabung?"}{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRegistering(!isRegistering);
+                        setAuthError("");
+                      }}
+                      className="text-accent-ochre font-bold hover:underline"
+                    >
+                      {isRegistering ? "Masuk Sekarang" : "Daftar Akun Baru"}
+                    </button>
+                  </p>
+                </div>
+              </form>
+
+              {/* Close Button top corner */}
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all cursor-pointer"
+              >
+                <X className="w-4.5 h-4.5" />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {
     /* 9. GLOBAL INTERACTIVE TOAST NOTIFICATIONS */
   }
       <AnimatePresence>
