@@ -32,7 +32,9 @@ import {
   Coffee,
   Trees,
   TrendingUp,
-  MapPin
+  MapPin,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 export const ASSET_CONFIG = {
@@ -103,6 +105,7 @@ export default function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState("");
   const [orders, setOrders] = useState([]);
@@ -1937,14 +1940,23 @@ export default function App() {
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Kata Sandi</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 6 karakter"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Min. 6 karakter"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-4 pr-11 py-3 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition-colors p-1 flex items-center justify-center cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <button
