@@ -110,7 +110,13 @@ export default function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState("");
   const [orders, setOrders] = useState([]);
-  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingAddress, setShippingAddress] = useState({
+    recipientName: "",
+    phone: "",
+    provinceCity: "",
+    addressDetails: "",
+    postalCode: ""
+  });
 
   const generateOrderId = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -126,7 +132,13 @@ export default function App() {
       setUser(currentUser);
       if (!currentUser) {
         setCart([]);
-        setShippingAddress("");
+        setShippingAddress({
+          recipientName: "",
+          phone: "",
+          provinceCity: "",
+          addressDetails: "",
+          postalCode: ""
+        });
       }
     });
     return () => unsubscribe();
@@ -237,6 +249,28 @@ export default function App() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+  const renderAddressDetails = (alamat) => {
+    if (!alamat) return <span className="text-stone-400">Tidak ada alamat</span>;
+    if (typeof alamat === "object") {
+      return (
+        <div className="space-y-1.5 text-xs text-stone-700">
+          <p className="font-bold text-stone-800 flex items-center gap-1.5 flex-wrap">
+            <span className="bg-mangrove-light text-mangrove-deep px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Penerima</span>
+            <span className="text-stone-900 font-semibold">{alamat.recipientName || "-"}</span>
+            <span className="text-stone-300">|</span>
+            <span className="font-mono text-stone-500 font-semibold">{alamat.phone || "-"}</span>
+          </p>
+          <p className="text-stone-600 leading-relaxed font-medium">
+            {alamat.addressDetails || "-"}
+          </p>
+          <p className="text-stone-500 text-[11px] font-bold uppercase tracking-wider">
+            {alamat.provinceCity || "-"} {alamat.postalCode ? `• KODE POS: ${alamat.postalCode}` : ""}
+          </p>
+        </div>
+      );
+    }
+    return <p className="text-stone-600 leading-relaxed text-xs break-words">{alamat}</p>;
   };
   const cartTotal = useMemo(() => {
     return cart
@@ -356,8 +390,14 @@ export default function App() {
       setShowLoginModal(true);
       return;
     }
-    if (!shippingAddress.trim()) {
-      triggerToast("Silakan isi alamat pengiriman lengkap Anda terlebih dahulu.", "info");
+    if (
+      !shippingAddress.recipientName?.trim() ||
+      !shippingAddress.phone?.trim() ||
+      !shippingAddress.provinceCity?.trim() ||
+      !shippingAddress.addressDetails?.trim() ||
+      !shippingAddress.postalCode?.trim()
+    ) {
+      triggerToast("Silakan isi semua bidang Alamat Pengiriman (Nama, No HP, Wilayah, Alamat Lengkap, Kode Pos) terlebih dahulu.", "info");
       return;
     }
     setCountdown(600);
@@ -415,7 +455,13 @@ export default function App() {
           setCheckoutStatus("success");
           // Hapus hanya produk yang dicentang dari keranjang belanja
           setCart((prev) => prev.filter((item) => item.checked === false));
-          setShippingAddress("");
+          setShippingAddress({
+            recipientName: "",
+            phone: "",
+            provinceCity: "",
+            addressDetails: "",
+            postalCode: ""
+          });
           triggerToast("Pembayaran Berhasil! Pesanan Anda telah tersimpan.", "success");
         })
         .catch((err) => {
@@ -1415,8 +1461,8 @@ export default function App() {
 
                       {/* Alamat Pengiriman */}
                       <div className="border-t border-stone-100/80 pt-4 mt-4 text-left">
-                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Alamat Pengiriman:</span>
-                        <p className="text-xs text-stone-600 mt-1 leading-relaxed font-medium break-words">{order.alamat || "Alamat lengkap pengiriman tidak diisi"}</p>
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-2">Alamat Pengiriman:</span>
+                        {renderAddressDetails(order.alamat)}
                       </div>
                     </div>
 
@@ -1625,16 +1671,75 @@ export default function App() {
                       </div>
 
                       {/* Alamat Lengkap Pengiriman */}
-                      <div className="space-y-1.5 text-left border-t border-stone-200/60 pt-3">
-                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Lengkap Pengiriman</label>
-                        <textarea
-                          rows={2}
-                          required
-                          value={shippingAddress}
-                          onChange={(e) => setShippingAddress(e.target.value)}
-                          placeholder="Masukkan alamat pengiriman lengkap Anda (RT/RW, kecamatan, kota, kode pos)..."
-                          className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all resize-none placeholder-stone-400 font-medium"
-                        />
+                      <div className="space-y-3 text-left border-t border-stone-200/60 pt-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman (Tokopedia Style)</label>
+                          <span className="text-[9px] text-mangrove-deep font-bold bg-mangrove-light px-2 py-0.5 rounded-full uppercase tracking-wider">Form Terpisah</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Nama Penerima</span>
+                            <input
+                              type="text"
+                              required
+                              value={shippingAddress.recipientName || ""}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, recipientName: e.target.value }))}
+                              placeholder="Nama lengkap"
+                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                            />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">No. Handphone</span>
+                            <input
+                              type="tel"
+                              required
+                              value={shippingAddress.phone || ""}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, phone: e.target.value }))}
+                              placeholder="Contoh: 08123456789"
+                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="col-span-2 space-y-1">
+                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Provinsi & Kota/Kabupaten</span>
+                            <input
+                              type="text"
+                              required
+                              value={shippingAddress.provinceCity || ""}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, provinceCity: e.target.value }))}
+                              placeholder="Contoh: DKI Jakarta, Jakarta Pusat"
+                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Kode Pos</span>
+                            <input
+                              type="text"
+                              required
+                              value={shippingAddress.postalCode || ""}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))}
+                              placeholder="10110"
+                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Lengkap / Nama Jalan</span>
+                          <input
+                            type="text"
+                            required
+                            value={shippingAddress.addressDetails || ""}
+                            onChange={(e) => setShippingAddress(prev => ({ ...prev, addressDetails: e.target.value }))}
+                            placeholder="Nama jalan, RT/RW, nomor rumah, nomor unit"
+                            className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                          />
+                        </div>
                       </div>
 
                       <button
@@ -1901,8 +2006,8 @@ export default function App() {
 
                     {/* Alamat Pengiriman */}
                     <div className="border-t border-dashed border-stone-300 pt-3 text-[10px] text-left">
-                      <span className="font-bold text-stone-900 block uppercase">Alamat Pengiriman:</span>
-                      <span className="text-stone-600 block mt-1 leading-normal break-words">{activeReceipt.alamat || "Tidak ada alamat"}</span>
+                      <span className="font-bold text-stone-900 block uppercase mb-1.5">Alamat Pengiriman:</span>
+                      {renderAddressDetails(activeReceipt.alamat)}
                     </div>
 
                     {
