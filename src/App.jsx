@@ -15,6 +15,7 @@ import {
   Minus,
   Leaf,
   CheckCircle2,
+  Zap,
   QrCode,
   Clock,
   ArrowRight,
@@ -277,6 +278,25 @@ export default function App() {
       triggerToast(`Berhasil menambahkan ${product.name} ke keranjang!`);
       return [...prev, { product, quantity: 1 }];
     });
+  };
+  const handleInstantBuy = (product) => {
+    if (!user) {
+      triggerToast("Silakan masuk terlebih dahulu untuk membeli produk secara instan.", "info");
+      setShowLoginModal(true);
+      return;
+    }
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        triggerToast(`Jumlah ${product.name} ditambah di keranjang!`);
+        return prev.map(
+          (item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      triggerToast(`Berhasil menambahkan ${product.name} ke keranjang!`);
+      return [...prev, { product, quantity: 1 }];
+    });
+    setIsCartOpen(true);
   };
   const handleDecreaseQuantity = (productId) => {
     setCart((prev) => {
@@ -1021,7 +1041,7 @@ export default function App() {
                             </p>
                           </div>
 
-                          <div className="border-t border-stone-100 pt-4 flex items-center justify-between">
+                          <div className="border-t border-stone-100 pt-4 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
                             <div>
                               <span className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider">Harga Lestari</span>
                               <span className="font-mono font-bold text-base text-mangrove-deep">
@@ -1029,13 +1049,23 @@ export default function App() {
                               </span>
                             </div>
 
-                            <button
-    onClick={() => handleAddToCart(product)}
-    className="bg-accent-ochre hover:opacity-95 text-white p-2.5 rounded-xl transition-all shadow-sm flex items-center space-x-1.5 group/btn text-xs font-bold cursor-pointer"
-  >
-                              <Plus className="w-4 h-4" />
-                              <span>Beli</span>
-                            </button>
+                            <div className="flex items-center space-x-2 w-full xl:w-auto">
+                              <button
+                                onClick={() => handleAddToCart(product)}
+                                className="bg-stone-100 hover:bg-stone-200/85 text-stone-700 hover:text-stone-900 p-2.5 rounded-xl transition-all flex items-center justify-center cursor-pointer border border-stone-200/40"
+                                title="Tambah ke Keranjang"
+                              >
+                                <ShoppingCart className="w-4.5 h-4.5" />
+                              </button>
+                              
+                              <button
+                                onClick={() => handleInstantBuy(product)}
+                                className="flex-1 xl:flex-none bg-accent-ochre hover:bg-accent-ochre/95 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm text-xs font-bold flex items-center justify-center space-x-1.5 cursor-pointer"
+                              >
+                                <Zap className="w-3.5 h-3.5 text-white fill-white/20 animate-bounce" />
+                                <span>Beli Sekarang</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>)}
