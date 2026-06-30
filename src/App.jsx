@@ -109,6 +109,7 @@ export default function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState("");
   const [orders, setOrders] = useState([]);
+  const [shippingAddress, setShippingAddress] = useState("");
 
   const generateOrderId = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -122,6 +123,10 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (!currentUser) {
+        setCart([]);
+        setShippingAddress("");
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -167,9 +172,9 @@ export default function App() {
     setAuthError("");
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      triggerToast("Pendaftaran berhasil! Selamat datang di Mangrovise.");
-      setShowLoginModal(false);
-      setEmail("");
+      await signOut(auth);
+      triggerToast("Pendaftaran berhasil! Silakan masuk dengan akun baru Anda.", "success");
+      setIsRegistering(false);
       setPassword("");
     } catch (error) {
       setAuthError(error.message || "Gagal mendaftar. Gunakan email lain atau pastikan password min. 6 karakter.");
@@ -256,6 +261,11 @@ export default function App() {
     });
   }, [searchQuery, selectedCategory, selectedFlavor]);
   const handleAddToCart = (product) => {
+    if (!user) {
+      triggerToast("Silakan masuk terlebih dahulu untuk menambahkan produk ke keranjang.", "info");
+      setShowLoginModal(true);
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
@@ -303,6 +313,10 @@ export default function App() {
       setShowLoginModal(true);
       return;
     }
+    if (!shippingAddress.trim()) {
+      triggerToast("Silakan isi alamat pengiriman lengkap Anda terlebih dahulu.", "info");
+      return;
+    }
     setCountdown(600);
     setCheckoutStatus("pending");
     setIsCheckoutModalOpen(true);
@@ -331,6 +345,7 @@ export default function App() {
       total: cartTotal,
       tanggal: dateStr,
       status: "In Process",
+      alamat: shippingAddress,
       ecoDonation: ecoMetrics.seedlings,
       carbonSaved: ecoMetrics.carbonOffset
     };
@@ -344,12 +359,14 @@ export default function App() {
             date: dateStr,
             items: [...cart],
             subtotal: cartTotal,
+            alamat: shippingAddress,
             ecoDonation: ecoMetrics.seedlings,
             carbonSaved: ecoMetrics.carbonOffset
           };
           setActiveReceipt(receipt);
           setCheckoutStatus("success");
           setCart([]);
+          setShippingAddress("");
           triggerToast("Pembayaran Berhasil! Pesanan Anda telah tersimpan.", "success");
         })
         .catch((err) => {
@@ -411,47 +428,36 @@ export default function App() {
         </div>
       </div>
 
-      {
-    /* 3. HERO SECTION WITH ORGANIC CURVED HEADER */
-  }
-      <div className="relative bg-mangrove-deep text-white pt-6 pb-24 md:pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden rounded-b-[3.5rem] sm:rounded-b-[5rem] lg:rounded-b-[7rem] shadow-2xl">
-        {
-    /* Background Decorative Organic Glows */
-  }
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-emerald-800/10 rounded-full blur-[100px] -translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-        <div className="absolute bottom-0 right-10 w-[400px] h-[400px] bg-accent-ochre/10 rounded-full blur-[120px] pointer-events-none" />
-        
-        {
-    /* Navigation Bar inside curved header */
-  }
-        <header className="max-w-7xl mx-auto flex items-center justify-between py-4 px-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-lg relative z-10 mb-12 md:mb-16">
+      {/* 3. STICKY NAVBAR MAIN HEADER WRAPPER */}
+      <div className="sticky top-0 z-50 bg-mangrove-deep/95 backdrop-blur-md border-b border-emerald-900/40 shadow-lg px-4 sm:px-6 lg:px-8">
+        <header className="max-w-7xl mx-auto flex items-center justify-between py-4 relative z-10">
           <div className="flex items-center">
             {renderLogo()}
           </div>
           
           <nav className="hidden md:flex items-center space-x-8 text-sm font-medium">
             <button
-    onClick={() => handleTabChange("katalog")}
-    className={`hover:text-accent-ochre transition-colors relative py-1 flex items-center gap-1.5 ${currentTab === "katalog" ? "text-accent-ochre font-bold" : "text-stone-200"}`}
-  >
+              onClick={() => handleTabChange("katalog")}
+              className={`hover:text-accent-ochre transition-colors relative py-1 flex items-center gap-1.5 ${currentTab === "katalog" ? "text-accent-ochre font-bold" : "text-stone-200"}`}
+            >
               <LayoutGrid className="w-4 h-4" />
               <span>Katalog</span>
               {currentTab === "katalog" && <motion.div layoutId="navIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-ochre rounded-full" />}
             </button>
             
             <button
-    onClick={() => handleTabChange("tentang")}
-    className={`hover:text-accent-ochre transition-colors relative py-1 flex items-center gap-1.5 ${currentTab === "tentang" ? "text-accent-ochre font-bold" : "text-stone-200"}`}
-  >
+              onClick={() => handleTabChange("tentang")}
+              className={`hover:text-accent-ochre transition-colors relative py-1 flex items-center gap-1.5 ${currentTab === "tentang" ? "text-accent-ochre font-bold" : "text-stone-200"}`}
+            >
               <Trees className="w-4 h-4" />
               <span>Tentang Kami</span>
               {currentTab === "tentang" && <motion.div layoutId="navIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-ochre rounded-full" />}
             </button>
             
             <button
-    onClick={() => handleTabChange("impact")}
-    className={`hover:text-accent-ochre transition-colors relative py-1 flex items-center gap-1.5 ${currentTab === "impact" ? "text-accent-ochre font-bold" : "text-stone-200"}`}
-  >
+              onClick={() => handleTabChange("impact")}
+              className={`hover:text-accent-ochre transition-colors relative py-1 flex items-center gap-1.5 ${currentTab === "impact" ? "text-accent-ochre font-bold" : "text-stone-200"}`}
+            >
               <TrendingUp className="w-4 h-4" />
               <span>Kalkulator Dampak</span>
               {currentTab === "impact" && <motion.div layoutId="navIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-ochre rounded-full" />}
@@ -470,19 +476,18 @@ export default function App() {
           </nav>
 
           <div className="flex items-center space-x-3">
-            {
-    /* Shopping Cart Button */
-  }
             <button
-    onClick={() => setIsCartOpen(true)}
-    className="bg-accent-ochre hover:bg-accent-ochre/90 text-white p-2.5 rounded-xl transition-all shadow-md flex items-center space-x-2 relative group"
-    aria-label="Buka Keranjang"
-  >
+              onClick={() => setIsCartOpen(true)}
+              className="bg-accent-ochre hover:bg-accent-ochre/90 text-white p-2.5 rounded-xl transition-all shadow-md flex items-center space-x-2 relative group"
+              aria-label="Buka Keranjang"
+            >
               <ShoppingCart className="w-4 h-4" />
               <span className="text-xs font-bold font-mono px-1">{totalCartItems}</span>
-              {totalCartItems > 0 && <span className="absolute -top-1 -right-1 bg-white text-mangrove-deep text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-bounce shadow-md">
+              {totalCartItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-white text-mangrove-deep text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-bounce shadow-md">
                   {totalCartItems}
-                </span>}
+                </span>
+              )}
             </button>
 
             {user ? (
@@ -507,60 +512,56 @@ export default function App() {
               </button>
             )}
 
-            {
-    /* Mobile Menu Toggle Button */
-  }
             <button
-    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-    className="md:hidden bg-white/10 hover:bg-white/20 border border-white/10 text-white p-2.5 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer"
-    aria-label="Menu"
-  >
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden bg-white/10 hover:bg-white/20 border border-white/10 text-white p-2.5 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer"
+              aria-label="Menu"
+            >
               {isMobileMenuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
             </button>
           </div>
         </header>
 
-        {
-    /* Mobile Navigation Dropdown Menu */
-  }
+        {/* Mobile Navigation Dropdown Menu */}
         <AnimatePresence>
-          {isMobileMenuOpen && <motion.div
-    initial={{ opacity: 0, height: 0, y: -10 }}
-    animate={{ opacity: 1, height: "auto", y: 0 }}
-    exit={{ opacity: 0, height: 0, y: -10 }}
-    transition={{ duration: 0.2 }}
-    className="md:hidden max-w-7xl mx-auto rounded-2xl bg-mangrove-deep/95 backdrop-blur-lg border border-white/10 shadow-xl overflow-hidden relative z-10 mb-8 p-4 text-left"
-  >
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden rounded-2xl bg-mangrove-deep/95 backdrop-blur-lg border border-white/10 shadow-xl overflow-hidden relative z-10 mb-4 p-4 text-left"
+            >
               <div className="flex flex-col space-y-2">
                 <button
-    onClick={() => {
-      handleTabChange("katalog");
-      setIsMobileMenuOpen(false);
-    }}
-    className={`w-full text-left py-2.5 px-4 rounded-xl flex items-center space-x-3 text-xs font-bold transition-all ${currentTab === "katalog" ? "bg-accent-ochre text-white shadow-md" : "text-stone-200 hover:bg-white/5"}`}
-  >
+                  onClick={() => {
+                    handleTabChange("katalog");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left py-2.5 px-4 rounded-xl flex items-center space-x-3 text-xs font-bold transition-all ${currentTab === "katalog" ? "bg-accent-ochre text-white shadow-md" : "text-stone-200 hover:bg-white/5"}`}
+                >
                   <LayoutGrid className="w-4 h-4" />
                   <span>Katalog Belanja</span>
                 </button>
                 
                 <button
-    onClick={() => {
-      handleTabChange("tentang");
-      setIsMobileMenuOpen(false);
-    }}
-    className={`w-full text-left py-2.5 px-4 rounded-xl flex items-center space-x-3 text-xs font-bold transition-all ${currentTab === "tentang" ? "bg-accent-ochre text-white shadow-md" : "text-stone-200 hover:bg-white/5"}`}
-  >
+                  onClick={() => {
+                    handleTabChange("tentang");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left py-2.5 px-4 rounded-xl flex items-center space-x-3 text-xs font-bold transition-all ${currentTab === "tentang" ? "bg-accent-ochre text-white shadow-md" : "text-stone-200 hover:bg-white/5"}`}
+                >
                   <Trees className="w-4 h-4" />
                   <span>Tentang Kami</span>
                 </button>
                 
                 <button
-    onClick={() => {
-      handleTabChange("impact");
-      setIsMobileMenuOpen(false);
-    }}
-    className={`w-full text-left py-2.5 px-4 rounded-xl flex items-center space-x-3 text-xs font-bold transition-all ${currentTab === "impact" ? "bg-accent-ochre text-white shadow-md" : "text-stone-200 hover:bg-white/5"}`}
-  >
+                  onClick={() => {
+                    handleTabChange("impact");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left py-2.5 px-4 rounded-xl flex items-center space-x-3 text-xs font-bold transition-all ${currentTab === "impact" ? "bg-accent-ochre text-white shadow-md" : "text-stone-200 hover:bg-white/5"}`}
+                >
                   <TrendingUp className="w-4 h-4" />
                   <span>Kalkulator Dampak</span>
                 </button>
@@ -606,8 +607,18 @@ export default function App() {
                   </button>
                 )}
               </div>
-            </motion.div>}
+            </motion.div>
+          )}
         </AnimatePresence>
+      </div>
+
+      {/* 4. HERO SECTION WITH ORGANIC CURVED HEADER */}
+      <div className="relative bg-mangrove-deep text-white pt-16 pb-24 md:pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden rounded-b-[3.5rem] sm:rounded-b-[5rem] lg:rounded-b-[7rem] shadow-2xl">
+        {
+    /* Background Decorative Organic Glows */
+  }
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-emerald-800/10 rounded-full blur-[100px] -translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 right-10 w-[400px] h-[400px] bg-accent-ochre/10 rounded-full blur-[120px] pointer-events-none" />
 
         {
     /* Hero Main Content */
@@ -917,10 +928,15 @@ export default function App() {
                   
                   <div className="pt-2">
                     <button
-    onClick={() => {
-      ASSET_CONFIG.products.forEach((p) => handleAddToCart(p));
-      triggerToast("Bundling Eco Saver Pack ditambahkan ke keranjang!");
-    }}
+                      onClick={() => {
+                        if (!user) {
+                          triggerToast("Silakan masuk terlebih dahulu untuk membeli paket bundling.", "info");
+                          setShowLoginModal(true);
+                          return;
+                        }
+                        ASSET_CONFIG.products.forEach((p) => handleAddToCart(p));
+                        triggerToast("Bundling Eco Saver Pack ditambahkan ke keranjang!");
+                      }}
     className="bg-accent-ochre hover:bg-accent-ochre/95 text-white font-bold text-xs py-3 px-5 rounded-xl transition-all shadow-md flex items-center space-x-2 w-full justify-center group"
   >
                       <span>Beli Paket Bundling (Hemat 15%)</span>
@@ -1337,6 +1353,12 @@ export default function App() {
                           Setara -{order.carbonSaved || Math.round(order.total / 10000) * 2} kg CO₂ / tahun
                         </div>
                       </div>
+
+                      {/* Alamat Pengiriman */}
+                      <div className="border-t border-stone-100/80 pt-4 mt-4 text-left">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Alamat Pengiriman:</span>
+                        <p className="text-xs text-stone-600 mt-1 leading-relaxed font-medium break-words">{order.alamat || "Alamat lengkap pengiriman tidak diisi"}</p>
+                      </div>
                     </div>
 
                     {/* Order Card Footer */}
@@ -1512,10 +1534,23 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* Alamat Lengkap Pengiriman */}
+                      <div className="space-y-1.5 text-left border-t border-stone-200/60 pt-3">
+                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Lengkap Pengiriman</label>
+                        <textarea
+                          rows={2}
+                          required
+                          value={shippingAddress}
+                          onChange={(e) => setShippingAddress(e.target.value)}
+                          placeholder="Masukkan alamat pengiriman lengkap Anda (RT/RW, kecamatan, kota, kode pos)..."
+                          className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all resize-none placeholder-stone-400 font-medium"
+                        />
+                      </div>
+
                       <button
-    onClick={handleCheckout}
-    className="w-full bg-accent-ochre hover:bg-accent-ochre/95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-accent-ochre/10 transition-all flex items-center justify-center space-x-2 cursor-pointer"
-  >
+                        onClick={handleCheckout}
+                        className="w-full bg-accent-ochre hover:bg-accent-ochre/95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-accent-ochre/10 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                      >
                         <QrCode className="w-5 h-5" />
                         <span>Bayar via QRIS (Simulasi)</span>
                       </button>
@@ -1772,6 +1807,12 @@ export default function App() {
                         <span>Total Pembayaran:</span>
                         <span>Rp {activeReceipt.subtotal.toLocaleString("id-ID")}</span>
                       </div>
+                    </div>
+
+                    {/* Alamat Pengiriman */}
+                    <div className="border-t border-dashed border-stone-300 pt-3 text-[10px] text-left">
+                      <span className="font-bold text-stone-900 block uppercase">Alamat Pengiriman:</span>
+                      <span className="text-stone-600 block mt-1 leading-normal break-words">{activeReceipt.alamat || "Tidak ada alamat"}</span>
                     </div>
 
                     {
