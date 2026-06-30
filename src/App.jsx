@@ -19,6 +19,7 @@ import {
   QrCode,
   Clock,
   ArrowRight,
+  ArrowLeft,
   Sparkles,
   Users,
   Menu,
@@ -216,6 +217,13 @@ export default function App() {
   };
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartStep, setCartStep] = useState(1);
+
+  useEffect(() => {
+    if (isCartOpen) {
+      setCartStep(1);
+    }
+  }, [isCartOpen]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedFlavor, setSelectedFlavor] = useState("Semua");
@@ -1545,90 +1553,179 @@ export default function App() {
   >
                           Mulai Belanja Sekarang
                         </button>
-                      </div> : <div className="space-y-4">
-                        {/* Pilih Semua Checkbox (Ala Tokopedia) */}
-                        <div className="flex items-center justify-between pb-3 border-b border-stone-150 mb-3 text-left">
-                          <label className="flex items-center space-x-2.5 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={allChecked}
-                              onChange={toggleSelectAll}
-                              className="w-4.5 h-4.5 text-mangrove-deep border-stone-300 rounded focus:ring-mangrove-deep cursor-pointer accent-mangrove-deep"
-                            />
-                            <span className="text-xs font-bold text-stone-700">Pilih Semua ({cart.length} produk)</span>
-                          </label>
-                          {cart.some(item => item.checked !== false) && (
-                            <button
-                              onClick={() => {
-                                setCart(prev => prev.map(item => ({ ...item, checked: false })));
-                              }}
-                              className="text-xs font-bold text-stone-400 hover:text-mangrove-deep transition-colors cursor-pointer"
-                            >
-                              Hapus Pilihan
-                            </button>
-                          )}
-                        </div>
-
-                        {cart.map((item) => <div
-    key={item.product.id}
-    className="flex items-center space-x-3 p-3 rounded-xl border border-stone-150 bg-white hover:border-stone-350 transition-colors text-left"
-  >
-                            {/* Checkbox untuk seleksi barang (Ala Tokopedia) */}
-                            <input
-                              type="checkbox"
-                              checked={item.checked !== false}
-                              onChange={() => toggleCheckItem(item.product.id)}
-                              className="w-4.5 h-4.5 text-mangrove-deep border-stone-300 rounded focus:ring-mangrove-deep cursor-pointer accent-mangrove-deep shrink-0"
-                            />
-
-                            <img
-    src={item.product.image}
-    alt={item.product.name}
-    className="w-16 h-16 object-cover rounded-lg bg-stone-50 shrink-0 border border-stone-100"
-    referrerPolicy="no-referrer"
-  />
-                            
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-xs text-stone-900 line-clamp-1 leading-tight">
-                                {item.product.name}
-                              </h4>
-                              <span className="block text-xs font-mono font-bold text-mangrove-deep mt-0.5">
-                                Rp {item.product.price.toLocaleString("id-ID")}
-                              </span>
-
-                              <div className="flex items-center justify-between mt-2">
-                                {
-    /* Quantity Toggler */
-  }
-                                <div className="flex items-center space-x-2 bg-stone-100 p-1 rounded-lg border border-stone-200">
+                      </div> : (
+                        <div className="space-y-4">
+                          {cartStep === 1 ? (
+                            <>
+                              {/* Pilih Semua Checkbox (Ala Tokopedia) */}
+                              <div className="flex items-center justify-between pb-3 border-b border-stone-150 mb-3 text-left">
+                                <label className="flex items-center space-x-2.5 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={allChecked}
+                                    onChange={toggleSelectAll}
+                                    className="w-4.5 h-4.5 text-mangrove-deep border-stone-300 rounded focus:ring-mangrove-deep cursor-pointer accent-mangrove-deep"
+                                  />
+                                  <span className="text-xs font-bold text-stone-700">Pilih Semua ({cart.length} produk)</span>
+                                </label>
+                                {cart.some(item => item.checked !== false) && (
                                   <button
-    onClick={() => handleDecreaseQuantity(item.product.id)}
-    className="text-stone-600 hover:text-stone-950 p-1 rounded hover:bg-stone-200 transition-colors cursor-pointer"
-  >
-                                    <Minus className="w-3 h-3" />
+                                    onClick={() => {
+                                      setCart(prev => prev.map(item => ({ ...item, checked: false })));
+                                    }}
+                                    className="text-xs font-bold text-stone-400 hover:text-mangrove-deep transition-colors cursor-pointer"
+                                  >
+                                    Hapus Pilihan
                                   </button>
-                                  <span className="text-xs font-mono font-bold text-stone-900 w-5 text-center">
-                                    {item.quantity}
-                                  </span>
-                                  <button
-    onClick={() => handleAddToCart(item.product)}
-    className="text-stone-600 hover:text-stone-950 p-1 rounded hover:bg-stone-200 transition-colors cursor-pointer"
-  >
-                                    <Plus className="w-3 h-3" />
-                                  </button>
+                                )}
+                              </div>
+
+                              {cart.map((item) => <div
+          key={item.product.id}
+          className="flex items-center space-x-3 p-3 rounded-xl border border-stone-150 bg-white hover:border-stone-350 transition-colors text-left"
+        >
+                                  {/* Checkbox untuk seleksi barang (Ala Tokopedia) */}
+                                  <input
+                                    type="checkbox"
+                                    checked={item.checked !== false}
+                                    onChange={() => toggleCheckItem(item.product.id)}
+                                    className="w-4.5 h-4.5 text-mangrove-deep border-stone-300 rounded focus:ring-mangrove-deep cursor-pointer accent-mangrove-deep shrink-0"
+                                  />
+
+                                  <img
+          src={item.product.image}
+          alt={item.product.name}
+          className="w-16 h-16 object-cover rounded-lg bg-stone-50 shrink-0 border border-stone-100"
+          referrerPolicy="no-referrer"
+        />
+                                  
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-bold text-xs text-stone-900 line-clamp-1 leading-tight">
+                                      {item.product.name}
+                                    </h4>
+                                    <span className="block text-xs font-mono font-bold text-mangrove-deep mt-0.5">
+                                      Rp {item.product.price.toLocaleString("id-ID")}
+                                    </span>
+
+                                    <div className="flex items-center justify-between mt-2">
+                                      {
+          /* Quantity Toggler */
+        }
+                                      <div className="flex items-center space-x-2 bg-stone-100 p-1 rounded-lg border border-stone-200">
+                                        <button
+          onClick={() => handleDecreaseQuantity(item.product.id)}
+          className="text-stone-600 hover:text-stone-950 p-1 rounded hover:bg-stone-200 transition-colors cursor-pointer"
+        >
+                                          <Minus className="w-3 h-3" />
+                                        </button>
+                                        <span className="text-xs font-mono font-bold text-stone-900 w-5 text-center">
+                                          {item.quantity}
+                                        </span>
+                                        <button
+          onClick={() => handleAddToCart(item.product)}
+          className="text-stone-600 hover:text-stone-950 p-1 rounded hover:bg-stone-200 transition-colors cursor-pointer"
+        >
+                                          <Plus className="w-3 h-3" />
+                                        </button>
+                                      </div>
+
+                                      <button
+          onClick={() => handleRemoveItem(item.product.id)}
+          className="text-stone-400 hover:text-red-600 p-1 rounded-md transition-colors cursor-pointer"
+          title="Hapus barang"
+        >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>)}
+                            </>
+                          ) : (
+                            <>
+                              {/* TAHAP 2: Form Alamat */}
+                              <button
+                                onClick={() => setCartStep(1)}
+                                className="flex items-center space-x-1.5 text-xs text-stone-500 hover:text-mangrove-deep font-bold transition-colors pb-3 border-b border-stone-100 cursor-pointer w-full text-left"
+                              >
+                                <ArrowLeft className="w-4 h-4" />
+                                <span>Kembali ke Keranjang</span>
+                              </button>
+
+                              {/* Alamat Lengkap Pengiriman Form */}
+                              <div className="space-y-3.5 text-left pt-1">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman (Tokopedia Style)</label>
+                                  <span className="text-[9px] text-mangrove-deep font-bold bg-mangrove-light px-2 py-0.5 rounded-full uppercase tracking-wider">Form Terpisah</span>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="space-y-1">
+                                    <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Nama Penerima</span>
+                                    <input
+                                      type="text"
+                                      required
+                                      value={shippingAddress.recipientName || ""}
+                                      onChange={(e) => setShippingAddress(prev => ({ ...prev, recipientName: e.target.value }))}
+                                      placeholder="Nama lengkap"
+                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-1">
+                                    <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">No. Handphone</span>
+                                    <input
+                                      type="tel"
+                                      required
+                                      value={shippingAddress.phone || ""}
+                                      onChange={(e) => setShippingAddress(prev => ({ ...prev, phone: e.target.value }))}
+                                      placeholder="Contoh: 08123456789"
+                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                                    />
+                                  </div>
                                 </div>
 
-                                <button
-    onClick={() => handleRemoveItem(item.product.id)}
-    className="text-stone-400 hover:text-red-600 p-1 rounded-md transition-colors cursor-pointer"
-    title="Hapus barang"
-  >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div className="col-span-2 space-y-1">
+                                    <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Provinsi & Kota/Kabupaten</span>
+                                    <input
+                                      type="text"
+                                      required
+                                      value={shippingAddress.provinceCity || ""}
+                                      onChange={(e) => setShippingAddress(prev => ({ ...prev, provinceCity: e.target.value }))}
+                                      placeholder="Contoh: DKI Jakarta, Jakarta Pusat"
+                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Kode Pos</span>
+                                    <input
+                                      type="text"
+                                      required
+                                      value={shippingAddress.postalCode || ""}
+                                      onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))}
+                                      placeholder="10110"
+                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Lengkap / Nama Jalan</span>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={shippingAddress.addressDetails || ""}
+                                    onChange={(e) => setShippingAddress(prev => ({ ...prev, addressDetails: e.target.value }))}
+                                    placeholder="Nama jalan, RT/RW, nomor rumah, nomor unit"
+                                    className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          </div>)}
-                      </div>}
+                            </>
+                          )}
+                        </div>
+                      )}
                   </div>
 
                   {
@@ -1670,85 +1767,36 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Alamat Lengkap Pengiriman */}
-                      <div className="space-y-3 text-left border-t border-stone-200/60 pt-3">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman (Tokopedia Style)</label>
-                          <span className="text-[9px] text-mangrove-deep font-bold bg-mangrove-light px-2 py-0.5 rounded-full uppercase tracking-wider">Form Terpisah</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Nama Penerima</span>
-                            <input
-                              type="text"
-                              required
-                              value={shippingAddress.recipientName || ""}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, recipientName: e.target.value }))}
-                              placeholder="Nama lengkap"
-                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
-                            />
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">No. Handphone</span>
-                            <input
-                              type="tel"
-                              required
-                              value={shippingAddress.phone || ""}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, phone: e.target.value }))}
-                              placeholder="Contoh: 08123456789"
-                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="col-span-2 space-y-1">
-                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Provinsi & Kota/Kabupaten</span>
-                            <input
-                              type="text"
-                              required
-                              value={shippingAddress.provinceCity || ""}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, provinceCity: e.target.value }))}
-                              placeholder="Contoh: DKI Jakarta, Jakarta Pusat"
-                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Kode Pos</span>
-                            <input
-                              type="text"
-                              required
-                              value={shippingAddress.postalCode || ""}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))}
-                              placeholder="10110"
-                              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Lengkap / Nama Jalan</span>
-                          <input
-                            type="text"
-                            required
-                            value={shippingAddress.addressDetails || ""}
-                            onChange={(e) => setShippingAddress(prev => ({ ...prev, addressDetails: e.target.value }))}
-                            placeholder="Nama jalan, RT/RW, nomor rumah, nomor unit"
-                            className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-accent-ochre/20 focus:border-accent-ochre transition-all placeholder-stone-400 font-medium"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={handleCheckout}
-                        className="w-full bg-accent-ochre hover:bg-accent-ochre/95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-accent-ochre/10 transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                      >
-                        <QrCode className="w-5 h-5" />
-                        <span>Bayar via QRIS (Simulasi)</span>
-                      </button>
+                      {cartStep === 1 ? (
+                        <button
+                          onClick={() => {
+                            const checkedItems = cart.filter((item) => item.checked !== false);
+                            if (checkedItems.length === 0) {
+                              triggerToast("Silakan pilih minimal 1 produk untuk dicheckout!", "info");
+                              return;
+                            }
+                            if (!user) {
+                              setIsCartOpen(false);
+                              triggerToast("Silakan masuk akun terlebih dahulu untuk melanjutkan checkout.", "info");
+                              setShowLoginModal(true);
+                              return;
+                            }
+                            setCartStep(2);
+                          }}
+                          className="w-full bg-mangrove-deep hover:opacity-95 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                        >
+                          <span>Lanjut ke Pengiriman</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleCheckout}
+                          className="w-full bg-accent-ochre hover:bg-accent-ochre/95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-accent-ochre/10 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                        >
+                          <QrCode className="w-5 h-5" />
+                          <span>Bayar via QRIS (Simulasi)</span>
+                        </button>
+                      )}
                     </div>}
 
                 </motion.div>
