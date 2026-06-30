@@ -239,17 +239,39 @@ export default function App() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
   const cartTotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    return cart
+      .filter((item) => item.checked !== false)
+      .reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   }, [cart]);
   const totalCartItems = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
+  const checkedCartItemsCount = useMemo(() => {
+    return cart
+      .filter((item) => item.checked !== false)
+      .reduce((sum, item) => sum + item.quantity, 0);
+  }, [cart]);
   const ecoMetrics = useMemo(() => {
-    const seedlings = totalCartItems;
+    const seedlings = checkedCartItemsCount;
     const carbonOffset = Number((seedlings * 21.8).toFixed(1));
     const wageHours = Number((seedlings * 0.5).toFixed(1));
     return { seedlings, carbonOffset, wageHours };
-  }, [totalCartItems]);
+  }, [checkedCartItemsCount]);
+  const allChecked = useMemo(() => {
+    return cart.length > 0 && cart.every((item) => item.checked !== false);
+  }, [cart]);
+  const toggleCheckItem = (productId) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.product.id === productId ? { ...item, checked: item.checked === false ? true : false } : item
+      )
+    );
+  };
+  const toggleSelectAll = () => {
+    setCart((prev) =>
+      prev.map((item) => ({ ...item, checked: !allChecked }))
+    );
+  };
   const filteredProducts = useMemo(() => {
     return ASSET_CONFIG.products.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || product.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -272,11 +294,11 @@ export default function App() {
       if (existing) {
         triggerToast(`Jumlah ${product.name} ditambah di keranjang!`);
         return prev.map(
-          (item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          (item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1, checked: true } : item
         );
       }
       triggerToast(`Berhasil menambahkan ${product.name} ke keranjang!`);
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: 1, checked: true }];
     });
   };
   const handleInstantBuy = (product) => {
@@ -290,11 +312,11 @@ export default function App() {
       if (existing) {
         triggerToast(`Jumlah ${product.name} ditambah di keranjang!`);
         return prev.map(
-          (item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          (item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1, checked: true } : item
         );
       }
       triggerToast(`Berhasil menambahkan ${product.name} ke keranjang!`);
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: 1, checked: true }];
     });
     setIsCartOpen(true);
   };
@@ -323,8 +345,9 @@ export default function App() {
     });
   };
   const handleCheckout = () => {
-    if (cart.length === 0) {
-      triggerToast("Keranjang belanja Anda masih kosong!", "info");
+    const checkedItems = cart.filter((item) => item.checked !== false);
+    if (checkedItems.length === 0) {
+      triggerToast("Silakan pilih minimal 1 produk untuk dicheckout!", "info");
       return;
     }
     if (!user) {
@@ -347,11 +370,16 @@ export default function App() {
       triggerToast("Sesi Anda habis. Silakan masuk kembali.", "error");
       return;
     }
+    const checkedItems = cart.filter((item) => item.checked !== false);
+    if (checkedItems.length === 0) {
+      triggerToast("Silakan pilih minimal 1 produk untuk dicheckout!", "info");
+      return;
+    }
     setCheckoutStatus("verifying");
     const orderId = generateOrderId();
     const invoiceNo = "INV/" + new Date().getFullYear() + "/MNG/" + Math.floor(1e5 + Math.random() * 9e5);
     const dateStr = new Date().toLocaleString("id-ID", { hour12: false });
-    const itemsData = cart.map(item => ({
+    const itemsData = checkedItems.map(item => ({
       productId: item.product.id,
       name: item.product.name,
       price: item.product.price,
@@ -377,7 +405,7 @@ export default function App() {
             invoiceNo,
             transactionId: orderId,
             date: dateStr,
-            items: [...cart],
+            items: [...checkedItems],
             subtotal: cartTotal,
             alamat: shippingAddress,
             ecoDonation: ecoMetrics.seedlings,
@@ -385,7 +413,8 @@ export default function App() {
           };
           setActiveReceipt(receipt);
           setCheckoutStatus("success");
-          setCart([]);
+          // Hapus hanya produk yang dicentang dari keranjang belanja
+          setCart((prev) => prev.filter((item) => item.checked === false));
           setShippingAddress("");
           triggerToast("Pembayaran Berhasil! Pesanan Anda telah tersimpan.", "success");
         })
@@ -1471,10 +1500,41 @@ export default function App() {
                           Mulai Belanja Sekarang
                         </button>
                       </div> : <div className="space-y-4">
+                        {/* Pilih Semua Checkbox (Ala Tokopedia) */}
+                        <div className="flex items-center justify-between pb-3 border-b border-stone-150 mb-3 text-left">
+                          <label className="flex items-center space-x-2.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={allChecked}
+                              onChange={toggleSelectAll}
+                              className="w-4.5 h-4.5 text-mangrove-deep border-stone-300 rounded focus:ring-mangrove-deep cursor-pointer accent-mangrove-deep"
+                            />
+                            <span className="text-xs font-bold text-stone-700">Pilih Semua ({cart.length} produk)</span>
+                          </label>
+                          {cart.some(item => item.checked !== false) && (
+                            <button
+                              onClick={() => {
+                                setCart(prev => prev.map(item => ({ ...item, checked: false })));
+                              }}
+                              className="text-xs font-bold text-stone-400 hover:text-mangrove-deep transition-colors cursor-pointer"
+                            >
+                              Hapus Pilihan
+                            </button>
+                          )}
+                        </div>
+
                         {cart.map((item) => <div
     key={item.product.id}
-    className="flex items-center space-x-4 p-3 rounded-xl border border-stone-150 bg-white hover:border-stone-350 transition-colors text-left"
+    className="flex items-center space-x-3 p-3 rounded-xl border border-stone-150 bg-white hover:border-stone-350 transition-colors text-left"
   >
+                            {/* Checkbox untuk seleksi barang (Ala Tokopedia) */}
+                            <input
+                              type="checkbox"
+                              checked={item.checked !== false}
+                              onChange={() => toggleCheckItem(item.product.id)}
+                              className="w-4.5 h-4.5 text-mangrove-deep border-stone-300 rounded focus:ring-mangrove-deep cursor-pointer accent-mangrove-deep shrink-0"
+                            />
+
                             <img
     src={item.product.image}
     alt={item.product.name}
