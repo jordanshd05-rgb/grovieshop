@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { useState, useEffect, useMemo, useRef } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
-import { ref, set, push, onValue, get } from "firebase/database";
 import { auth, db } from "./firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { ref as dbRef, set as dbSet, push as dbPush, onValue as dbOnValue, get as dbGet } from "firebase/database";
 import {
   ShoppingBag,
   ShoppingCart,
@@ -118,6 +118,10 @@ export default function App() {
     addressDetails: "",
     postalCode: ""
   });
+  const [cart, setCart] = useState([]);
+  const [isCartInitialized, setIsCartInitialized] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartStep, setCartStep] = useState(1);
 
   const generateOrderId = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -150,8 +154,8 @@ export default function App() {
       setOrders([]);
       return;
     }
-    const ordersRef = ref(db, `orders/${user.uid}`);
-    const unsubscribe = onValue(ordersRef, (snapshot) => {
+    const ordersRef = dbRef(db, `orders/${user.uid}`);
+    const unsubscribe = dbOnValue(ordersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const loadedOrders = Object.entries(data).map(([key, value]) => ({
@@ -168,8 +172,8 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    const addressRef = ref(db, `users/${user.uid}/profile/address`);
-    const unsubscribe = onValue(addressRef, (snapshot) => {
+    const addressRef = dbRef(db, `users/${user.uid}/profile/address`);
+    const unsubscribe = dbOnValue(addressRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setShippingAddress({
@@ -193,8 +197,8 @@ export default function App() {
     }
 
     setIsCartInitialized(false);
-    const cartRef = ref(db, `carts/${user.uid}`);
-    get(cartRef)
+    const cartRef = dbRef(db, `carts/${user.uid}`);
+    dbGet(cartRef)
       .then((snapshot) => {
         const data = snapshot.val();
         if (data && Array.isArray(data)) {
@@ -213,8 +217,8 @@ export default function App() {
   // Save cart to Firebase whenever cart changes (after being initialized)
   useEffect(() => {
     if (!user || !isCartInitialized) return;
-    const cartRef = ref(db, `carts/${user.uid}`);
-    set(cartRef, cart).catch((err) => {
+    const cartRef = dbRef(db, `carts/${user.uid}`);
+    dbSet(cartRef, cart).catch((err) => {
       console.error("Error saving cart to database:", err);
     });
   }, [cart, user, isCartInitialized]);
@@ -242,7 +246,7 @@ export default function App() {
       const registeredUser = userCredential.user;
       
       // Simpan/perbarui data alamat ke profil user baru
-      await set(ref(db, `users/${registeredUser.uid}/profile/address`), shippingAddress);
+      await dbSet(dbRef(db, `users/${registeredUser.uid}/profile/address`), shippingAddress);
       
       await signOut(auth);
       triggerToast("Pendaftaran berhasil! Silakan masuk dengan akun baru Anda.", "success");
@@ -273,10 +277,6 @@ export default function App() {
       mainContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   };
-  const [cart, setCart] = useState([]);
-  const [isCartInitialized, setIsCartInitialized] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartStep, setCartStep] = useState(1);
 
   useEffect(() => {
     if (isCartOpen) {
@@ -505,12 +505,12 @@ export default function App() {
       carbonSaved: ecoMetrics.carbonOffset
     };
     setTimeout(() => {
-      const userOrdersRef = ref(db, `orders/${user.uid}`);
-      push(userOrdersRef, orderData)
+      const userOrdersRef = dbRef(db, `orders/${user.uid}`);
+      dbPush(userOrdersRef, orderData)
         .then(() => {
           // Simpan/perbarui data alamat ke profil
-          const profileAddressRef = ref(db, `users/${user.uid}/profile/address`);
-          return set(profileAddressRef, shippingAddress);
+          const profileAddressRef = dbRef(db, `users/${user.uid}/profile/address`);
+          return dbSet(profileAddressRef, shippingAddress);
         })
         .then(() => {
           const receipt = {
