@@ -1577,7 +1577,7 @@ export default function App() {
                         <div className="space-y-4">
                           {cartStep === 1 ? (
                             <>
-                              {/* Pilih Semua Checkbox (Ala Tokopedia) */}
+                              {/* Pilih Semua Checkbox  */}
                               <div className="flex items-center justify-between pb-3 border-b border-stone-150 mb-3 text-left">
                                 <label className="flex items-center space-x-2.5 cursor-pointer select-none">
                                   <input
@@ -1604,7 +1604,7 @@ export default function App() {
           key={item.product.id}
           className="flex items-center space-x-3 p-3 rounded-xl border border-stone-150 bg-white hover:border-stone-350 transition-colors text-left"
         >
-                                  {/* Checkbox untuk seleksi barang (Ala Tokopedia) */}
+                                  {/* Checkbox untuk seleksi barang  */}
                                   <input
                                     type="checkbox"
                                     checked={item.checked !== false}
@@ -1674,7 +1674,7 @@ export default function App() {
                               {/* Alamat Lengkap Pengiriman Form */}
                               <div className="space-y-3.5 text-left pt-1">
                                 <div className="flex items-center justify-between">
-                                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman (Tokopedia Style)</label>
+                                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman ()</label>
                                   <span className="text-[9px] text-mangrove-deep font-bold bg-mangrove-light px-2 py-0.5 rounded-full uppercase tracking-wider">Form Terpisah</span>
                                 </div>
                                 
