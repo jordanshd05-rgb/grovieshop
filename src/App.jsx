@@ -1674,7 +1674,7 @@ export default function App() {
                               {/* Alamat Lengkap Pengiriman Form */}
                               <div className="space-y-3.5 text-left pt-1">
                                 <div className="flex items-center justify-between">
-                                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman ()</label>
+                                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman</label>
                                   <span className="text-[9px] text-mangrove-deep font-bold bg-mangrove-light px-2 py-0.5 rounded-full uppercase tracking-wider">Form Terpisah</span>
                                 </div>
                                 
