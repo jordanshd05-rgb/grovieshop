@@ -166,6 +166,24 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    const addressRef = ref(db, `users/${user.uid}/profile/address`);
+    const unsubscribe = onValue(addressRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setShippingAddress({
+          recipientName: data.recipientName || "",
+          phone: data.phone || "",
+          provinceCity: data.provinceCity || "",
+          addressDetails: data.addressDetails || "",
+          postalCode: data.postalCode || ""
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError("");
@@ -185,7 +203,12 @@ export default function App() {
     e.preventDefault();
     setAuthError("");
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const registeredUser = userCredential.user;
+      
+      // Simpan/perbarui data alamat ke profil user baru
+      await set(ref(db, `users/${registeredUser.uid}/profile/address`), shippingAddress);
+      
       await signOut(auth);
       triggerToast("Pendaftaran berhasil! Silakan masuk dengan akun baru Anda.", "success");
       setIsRegistering(false);
@@ -449,6 +472,11 @@ export default function App() {
       const userOrdersRef = ref(db, `orders/${user.uid}`);
       push(userOrdersRef, orderData)
         .then(() => {
+          // Simpan/perbarui data alamat ke profil
+          const profileAddressRef = ref(db, `users/${user.uid}/profile/address`);
+          return set(profileAddressRef, shippingAddress);
+        })
+        .then(() => {
           const receipt = {
             invoiceNo,
             transactionId: orderId,
@@ -463,13 +491,6 @@ export default function App() {
           setCheckoutStatus("success");
           // Hapus hanya produk yang dicentang dari keranjang belanja
           setCart((prev) => prev.filter((item) => item.checked === false));
-          setShippingAddress({
-            recipientName: "",
-            phone: "",
-            provinceCity: "",
-            addressDetails: "",
-            postalCode: ""
-          });
           triggerToast("Pembayaran Berhasil! Pesanan Anda telah tersimpan.", "success");
         })
         .catch((err) => {
@@ -581,11 +602,10 @@ export default function App() {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsCartOpen(true)}
-              className="bg-accent-ochre hover:bg-accent-ochre/90 text-white p-2.5 rounded-xl transition-all shadow-md flex items-center space-x-2 relative group"
+              className="bg-accent-ochre hover:bg-accent-ochre/90 text-white p-2.5 rounded-xl transition-all shadow-md flex items-center justify-center relative group"
               aria-label="Buka Keranjang"
             >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="text-xs font-bold font-mono px-1">{totalCartItems}</span>
+              <ShoppingCart className="w-4.5 h-4.5" />
               {totalCartItems > 0 && (
                 <span className="absolute -top-1 -right-1 bg-white text-mangrove-deep text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-bounce shadow-md">
                   {totalCartItems}
