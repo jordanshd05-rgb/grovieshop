@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
-import { ref, set, push, onValue } from "firebase/database";
+import { ref, set, push, onValue, get } from "firebase/database";
 import { auth, db } from "./firebase";
 import {
   ShoppingBag,
@@ -184,6 +184,41 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  // Load cart from Firebase when user logs in
+  useEffect(() => {
+    if (!user) {
+      setCart([]);
+      setIsCartInitialized(false);
+      return;
+    }
+
+    setIsCartInitialized(false);
+    const cartRef = ref(db, `carts/${user.uid}`);
+    get(cartRef)
+      .then((snapshot) => {
+        const data = snapshot.val();
+        if (data && Array.isArray(data)) {
+          setCart(data);
+        } else {
+          setCart([]);
+        }
+        setIsCartInitialized(true);
+      })
+      .catch((err) => {
+        console.error("Error loading cart from database:", err);
+        setIsCartInitialized(true);
+      });
+  }, [user]);
+
+  // Save cart to Firebase whenever cart changes (after being initialized)
+  useEffect(() => {
+    if (!user || !isCartInitialized) return;
+    const cartRef = ref(db, `carts/${user.uid}`);
+    set(cartRef, cart).catch((err) => {
+      console.error("Error saving cart to database:", err);
+    });
+  }, [cart, user, isCartInitialized]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError("");
@@ -239,6 +274,7 @@ export default function App() {
     }, 100);
   };
   const [cart, setCart] = useState([]);
+  const [isCartInitialized, setIsCartInitialized] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartStep, setCartStep] = useState(1);
 
@@ -1577,7 +1613,7 @@ export default function App() {
                         <div className="space-y-4">
                           {cartStep === 1 ? (
                             <>
-                              {/* Pilih Semua Checkbox  */}
+                              {/* Pilih Semua Checkbox (Ala Tokopedia) */}
                               <div className="flex items-center justify-between pb-3 border-b border-stone-150 mb-3 text-left">
                                 <label className="flex items-center space-x-2.5 cursor-pointer select-none">
                                   <input
@@ -1604,7 +1640,7 @@ export default function App() {
           key={item.product.id}
           className="flex items-center space-x-3 p-3 rounded-xl border border-stone-150 bg-white hover:border-stone-350 transition-colors text-left"
         >
-                                  {/* Checkbox untuk seleksi barang  */}
+                                  {/* Checkbox untuk seleksi barang (Ala Tokopedia) */}
                                   <input
                                     type="checkbox"
                                     checked={item.checked !== false}
@@ -1674,7 +1710,7 @@ export default function App() {
                               {/* Alamat Lengkap Pengiriman Form */}
                               <div className="space-y-3.5 text-left pt-1">
                                 <div className="flex items-center justify-between">
-                                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman</label>
+                                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Alamat Pengiriman (Tokopedia Style)</label>
                                   <span className="text-[9px] text-mangrove-deep font-bold bg-mangrove-light px-2 py-0.5 rounded-full uppercase tracking-wider">Form Terpisah</span>
                                 </div>
                                 
